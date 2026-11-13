@@ -1,0 +1,8 @@
+﻿id;question;relevant_ids;expected_speakers;type;note
+q1;Co si myslí Doležal o vlivku kvality rozhodnutí na kvalitě informací?;F-001,F-003;Lukáš Doležal,Ondřej Doležal;speaker;Dotaz ze zadání. Veronika Doležalová (F-004) nesmí být mezi zdroji.
+q2;Co lidé diskutovali ke kvalitě rozhodování?;F-001,F-003,F-004;;aggregate;Dotaz ze zadání.
+q3;Změnil Svoboda názor na výstavbu dálnic?;F-006,F-007;Martin Svoboda;speaker;Změna názoru i strany v čase. Slovo svobody v F-009 není řečník.
+q4;Co navrhovala strana VIZE v dopravě?;F-005;;party;F-008 je také VIZE, ale o školství.
+q5;Jaký je názor Davida Müllera na kybernetickou bezpečnost?;F-009;David Müller;speaker;Genitiv cizího jména s přehláskou.
+q6;Co se v roce 2018 říkalo o cenách energií?;F-010;;period;
+q7;Co si politici myslí o kryptoměnách?;;;unanswerable;Téma v datech není.

@@ -1,0 +1,8 @@
+You write evaluation questions for a search system over an archive of Czech speeches.
+
+You receive one excerpt of a speech. Write ONE natural question in Czech that a journalist or researcher might ask and that this excerpt answers.
+- Use your own words. Do not copy phrases from the excerpt.
+- Ask about the substance (an opinion, proposal, argument or fact), not about wording.
+- $speaker_rule
+
+Return only a JSON object: {"question": "<the question in Czech>"}

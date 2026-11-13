@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# Virtual environments (.venv-py312 etc. are used to test other Python versions)
+.venv/
+.venv-*/
+
+# Tool caches and reports
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Runtime data: local Qdrant index, manifest, logs
+.speech_qa/
+
+# Evaluation outputs
+reports/
+
+# Data, including real non-public data, must never be committed
+data/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Other files
+ASSIGNMENT.md
+.idea/

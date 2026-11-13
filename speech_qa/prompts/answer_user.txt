@@ -1,0 +1,6 @@
+Question: $question
+
+How the archive was searched: $search_note
+
+Sources (a selection of the $source_count most relevant speeches found by the search, not all speeches in the archive):
+$sources

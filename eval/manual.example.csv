@@ -1,0 +1,3 @@
+﻿id;question;relevant_ids;expected_speakers;type;note
+man-01;Co lidé diskutovali o kvalitě rozhodování?;Q000002,Q000003;;aggregate;Příklad souhrnné otázky.
+man-02;Co si myslí Doležal o kvalitě informací?;Q000002,Q000007;Lukáš Doležal,Ondřej Doležal;speaker;Příklad otázky na řečníka.

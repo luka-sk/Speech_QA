@@ -1,0 +1,69 @@
+# Speech QA configuration.
+#
+# Every value below is the built-in default; removing a line falls back to it.
+# Any value can be overridden by an environment variable named
+#   SPEECH_QA__<SECTION>__<KEY>        e.g.  SPEECH_QA__OLLAMA__BASE_URL
+# Another configuration file can be selected with SPEECH_QA_CONFIG=<path>.
+# Relative paths are resolved against the directory of this file.
+
+[ollama]
+# OpenAI-compatible endpoint of the on-prem Ollama server. No API key is used.
+base_url = "http://localhost:11434/v1"
+# Language model that writes the answers.
+chat_model = "gemma4:12b"
+# Embedding model. gemma4:12b cannot produce embeddings. Install: ollama pull bge-m3
+embedding_model = "bge-m3"
+# Timeout of a single request to Ollama, in seconds.
+timeout_seconds = 120
+# How many times a failed request (connection error, 5xx) is retried.
+max_retries = 2
+
+[generation]
+# 0 = as deterministic as possible (also keeps evaluations repeatable).
+temperature = 0.0
+# "none" disables the model's thinking mode (about 8x faster answers).
+# Other values: "low", "medium", "high".
+reasoning_effort = "none"
+# Upper limit for the length of a generated answer, in tokens.
+max_answer_tokens = 800
+# Context window configured on the Ollama server, in tokens. Prompts are kept
+# below this limit. Depending on its version and settings, Ollama may silently
+# truncate longer prompts, so set this to the real server value (and raise it
+# in Ollama if you need longer contexts).
+context_window_tokens = 4096
+
+[index]
+# Directory of the local Qdrant index and its manifest.
+path = ".speech_qa/index"
+# Name of the Qdrant collection with speech chunks.
+collection = "speech_chunks"
+
+[ingest]
+# How many chunks are sent to the embedding model in one request.
+embedding_batch_size = 32
+
+[chunking]
+# Speeches are split into windows of whole sentences of about target_chars
+# characters (never more than max_chars, unless a single sentence is longer),
+# overlapping by overlap_sentences sentences.
+target_chars = 1000
+max_chars = 1500
+overlap_sentences = 1
+
+[retrieval]
+# Number of most similar chunks fetched from the index for a query.
+candidate_chunks = 50
+# Maximum number of speeches passed to the language model as sources.
+max_speeches = 8
+# Maximum number of speeches per speaker, applied when the query names no speaker.
+max_speeches_per_speaker = 2
+# Maximum number of chunks (passages) of one speech passed to the language model.
+max_passages_per_speech = 2
+
+[query]
+# Longer questions are rejected with an error message.
+max_chars = 1000
+
+[logging]
+# Technical logs go to stderr: DEBUG, INFO, WARNING or ERROR.
+level = "WARNING"

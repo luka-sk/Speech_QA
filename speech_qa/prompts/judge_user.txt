@@ -1,0 +1,7 @@
+Question: $question
+
+Sources:
+$sources
+
+Answer:
+$answer

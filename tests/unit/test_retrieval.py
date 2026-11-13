@@ -58,7 +58,9 @@ def test_query_is_embedded_without_the_recognised_names(
 def test_evidence_is_ranked_and_keeps_the_best_passages_in_document_order(
     ingested: QdrantSpeechIndex, fake_embedder: FakeEmbedder
 ) -> None:
-    result = make_retriever(ingested, fake_embedder).retrieve(
+    limits = RetrievalLimits(max_speeches=8, max_chunks_per_speech=2)
+
+    result = make_retriever(ingested, fake_embedder, limits).retrieve(
         "digitální identita a portál pro občany"
     )
 
@@ -97,10 +99,10 @@ def test_named_speaker_is_not_limited_by_diversity(
     assert set(speech_ids(result)) == {"F-006", "F-007"}
 
 
-def test_number_of_speeches_and_passages_is_limited(
+def test_number_of_speeches_and_chunks_is_limited(
     ingested: QdrantSpeechIndex, fake_embedder: FakeEmbedder
 ) -> None:
-    limits = RetrievalLimits(max_speeches=3, max_passages_per_speech=1)
+    limits = RetrievalLimits(max_speeches=3, max_chunks_per_speech=1)
 
     result = make_retriever(ingested, fake_embedder, limits).retrieve("rozhodování a informace")
 
@@ -131,7 +133,7 @@ def test_year_and_party_filters_are_applied(
         {"candidate_chunks": 0},
         {"max_speeches": 0},
         {"max_speeches_per_speaker": 0},
-        {"max_passages_per_speech": 0},
+        {"max_chunks_per_speech": 0},
     ],
 )
 def test_limits_must_be_positive(limits: dict[str, int]) -> None:

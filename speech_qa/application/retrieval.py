@@ -33,13 +33,13 @@ class RetrievalLimits:
         max_speeches: Speeches kept in the result.
         max_speeches_per_speaker: Speeches kept per speaker when the query names
             no speaker.
-        max_passages_per_speech: Chunks kept per speech.
+        max_chunks_per_speech: Best chunks kept per speech.
     """
 
     candidate_chunks: int = 50
-    max_speeches: int = 8
+    max_speeches: int = 5
     max_speeches_per_speaker: int = 2
-    max_passages_per_speech: int = 2
+    max_chunks_per_speech: int = 1
 
     def __post_init__(self) -> None:
         if (
@@ -47,7 +47,7 @@ class RetrievalLimits:
                 self.candidate_chunks,
                 self.max_speeches,
                 self.max_speeches_per_speaker,
-                self.max_passages_per_speech,
+                self.max_chunks_per_speech,
             )
             < 1
         ):
@@ -114,7 +114,7 @@ class Retriever:
             if diversify and per_speaker[speaker] >= self._limits.max_speeches_per_speaker:
                 continue
             per_speaker[speaker] += 1
-            best = chunks[: self._limits.max_passages_per_speech]
+            best = chunks[: self._limits.max_chunks_per_speech]
             selected.append(
                 Evidence(
                     speech=chunks[0].speech,

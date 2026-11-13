@@ -41,7 +41,7 @@ def render_markdown(result: EvaluationResult, configuration: Mapping[str, str]) 
         "",
         f"Doba běhu: {_number(result.duration_seconds / 60, 1)} min. "
         f"Metriky vyhledávání se počítají na prvních k = {result.k} nalezených projevech, "
-        "tedy na těch, které dostane jazykový model.",
+        "tedy na projevech vybraných pro jazykový model.",
         "",
         "## Konfigurace",
         "",

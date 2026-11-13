@@ -87,7 +87,7 @@ def create_retriever(settings: Settings, index: SpeechIndex) -> Retriever:
             candidate_chunks=retrieval.candidate_chunks,
             max_speeches=retrieval.max_speeches,
             max_speeches_per_speaker=retrieval.max_speeches_per_speaker,
-            max_passages_per_speech=retrieval.max_passages_per_speech,
+            max_chunks_per_speech=retrieval.max_chunks_per_speech,
         ),
     )
 
@@ -169,9 +169,10 @@ def describe_configuration(settings: Settings, index: SpeechIndex) -> dict[str, 
             f"překryv {chunking.overlap_sentences} věta"
         ),
         "Vyhledávání": (
-            f"{retrieval.candidate_chunks} úseků, max. {retrieval.max_speeches} projevů, "
-            f"max. {retrieval.max_speeches_per_speaker} na řečníka, "
-            f"max. {retrieval.max_passages_per_speech} úseky na projev"
+            f"kandidátní úseky: {retrieval.candidate_chunks}, "
+            f"projevy: max. {retrieval.max_speeches}, "
+            f"na řečníka: max. {retrieval.max_speeches_per_speaker}, "
+            f"úseky na projev: max. {retrieval.max_chunks_per_speech}"
         ),
         "Generování": (
             f"teplota {generation.temperature}, reasoning {generation.reasoning_effort}, "

@@ -54,11 +54,14 @@ overlap_sentences = 1
 # Number of most similar chunks fetched from the index for a query.
 candidate_chunks = 50
 # Maximum number of speeches passed to the language model as sources.
-max_speeches = 8
+max_speeches = 5
 # Maximum number of speeches per speaker, applied when the query names no speaker.
 max_speeches_per_speaker = 2
-# Maximum number of chunks (passages) of one speech passed to the language model.
-max_passages_per_speech = 2
+# Maximum number of chunks of one speech passed to the language model (its best ones).
+# All sources must fit into the prompt: with context_window_tokens = 4096 about
+# 2600 tokens are left for them, i.e. max_speeches x max_chunks_per_speech chunks of
+# up to ~1500 characters. Sources that do not fit are left out.
+max_chunks_per_speech = 1
 
 [query]
 # Longer questions are rejected with an error message.

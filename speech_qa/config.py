@@ -110,9 +110,9 @@ class RetrievalSettings(_Section):
     """Search for relevant speeches."""
 
     candidate_chunks: int = Field(default=50, ge=1, le=1000)
-    max_speeches: int = Field(default=8, ge=1, le=100)
+    max_speeches: int = Field(default=5, ge=1, le=100)
     max_speeches_per_speaker: int = Field(default=2, ge=1)
-    max_passages_per_speech: int = Field(default=2, ge=1, le=20)
+    max_chunks_per_speech: int = Field(default=1, ge=1, le=20)
 
     @model_validator(mode="after")
     def _check_limits(self) -> Self:

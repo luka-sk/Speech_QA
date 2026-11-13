@@ -56,7 +56,7 @@ overwritten without `--force`.
 Example output (format only; produced on the small test fixtures in `tests/fixtures/`):
 
 ```
-Vygenerováno 5 otázek (vyřazeno 1 nevhodných) → data/eval/synthetic.csv, za 1,1 min.
+Vygenerováno 5 otázek (vyřazeno 1 nevhodných) → data/eval/synthetic.csv, za 1,2 min.
 ```
 
 ```csv
@@ -111,9 +111,9 @@ python cli.py evaluate [--manual data/eval/manual.csv] [--synthetic data/eval/sy
 
 **What it does.**
 
-1. **Retrieval** for every question of both sets: the speeches that would be passed to the
-   language model (at most `retrieval.max_speeches`, by default 8) are compared with the
-   relevant ones, and the speakers recognised in the question with the expected ones.
+1. **Retrieval** for every question of both sets: the speeches selected for the language
+   model (at most `retrieval.max_speeches`, by default 5) are compared with the relevant ones,
+   and the speakers recognised in the question with the expected ones.
 2. **Answers** for every manual question and for a random sample of `--e2e-sample` synthetic
    questions (fixed seed): the whole pipeline runs with the language model and the answer is
    checked (citations, "no answer", latency).
@@ -135,12 +135,12 @@ Example output (format only; produced on the small test fixtures in `tests/fixtu
 these are not performance results):
 
 ```
-Evaluace dokončena za 9,8 min.
-  manual: 7 otázek, Hit@5 100 %, MRR 1,00, Recall@8 100 %
-    odpovědi: 7, přesnost citací 100 %, věrnost 5,0, relevance 5,0, odezva p50 47,8 s
-  synthetic: 5 otázek, Hit@5 100 %, MRR 1,00, Recall@8 100 %
-    odpovědi: 2, přesnost citací 100 %, věrnost 5,0, relevance 5,0, odezva p50 17,1 s
-Report: reports/evaluation-20261112-222153.md (+ .json)
+Evaluace dokončena za 13,2 min.
+  manual: 7 otázek, Hit@5 100 %, MRR 1,00, Recall@5 100 %
+    odpovědi: 7, přesnost citací 100 %, věrnost 5,0, relevance 5,0, odezva p50 41,9 s
+  synthetic: 5 otázek, Hit@5 100 %, MRR 1,00, Recall@5 100 %
+    odpovědi: 2, přesnost citací 100 %, věrnost 5,0, relevance 5,0, odezva p50 13,3 s
+Report: reports/evaluation-20261113-215603.md (+ .json)
 ```
 
 An excerpt of the Markdown report:
@@ -148,7 +148,7 @@ An excerpt of the Markdown report:
 ```markdown
 ## Vyhledávání
 
-| Sada | Otázek | S odpovědí v archivu | Hit@1 | Hit@5 | Recall@8 | MRR | nDCG@8 | Řečník – přesnost | Řečník – úplnost |
+| Sada | Otázek | S odpovědí v archivu | Hit@1 | Hit@5 | Recall@5 | MRR | nDCG@5 | Řečník – přesnost | Řečník – úplnost |
 |---|---|---|---|---|---|---|---|---|---|
 | manual | 7 | 6 | 100 % | 100 % | 100 % | 1,00 | 0,99 | 100 % | 100 % |
 | synthetic | 5 | 5 | 100 % | 100 % | 100 % | 1,00 | 1,00 | 100 % | 100 % |
@@ -172,7 +172,7 @@ typically an hour or more. For a quick check after a small change use `--retriev
 | Metric | Meaning |
 |---|---|
 | Hit@1, Hit@5 | Share of questions with at least one relevant speech among the first 1 / 5 results |
-| Recall@k | Share of the relevant speeches found among the k speeches passed to the model |
+| Recall@k | Share of the relevant speeches found among the k speeches selected for the model |
 | MRR | Mean of 1 / rank of the first relevant speech (1 = always first) |
 | nDCG@k | Quality of the order of the relevant speeches among the first k |
 | Speaker precision / recall | Recognised speakers that were expected / expected speakers that were recognised (summed over all questions; an empty `expected_speakers` means the question names nobody, so any recognised speaker counts as a mistake) |
@@ -194,10 +194,17 @@ reports:
 | Setting | Needs `ingest --rebuild` | What to try |
 |---|---|---|
 | `chunking.target_chars`, `max_chars`, `overlap_sentences` | yes | smaller windows (e.g. 500) for precise retrieval, larger (e.g. 2000) for more context per source |
-| `retrieval.max_speeches`, `max_passages_per_speech` | no | more sources help broad questions but make the prompt longer and answers slower |
+| `retrieval.max_speeches`, `max_chunks_per_speech` | no | more sources help broad questions but make the prompt longer and answers slower; all sources must fit into the prompt (see below) |
 | `retrieval.max_speeches_per_speaker` | no | lower for more variety of speakers, higher for depth |
 | `retrieval.candidate_chunks` | no | more candidates for broad questions over a large archive |
 | `generation.context_window_tokens` | no | must match Ollama; a larger window allows more sources |
+
+**All sources must fit into the prompt.** The prompt may use the context window minus the
+answer (`generation.max_answer_tokens`) and a small reserve. With the defaults, about 2,600
+tokens, roughly 7,800 characters, are left for the sources after the rules and the question.
+Sources that do not fit are left out, starting with the least relevant one (`--verbose` logs
+how many). Keep `max_speeches × max_chunks_per_speech × chunking.max_chars` within that
+space (the defaults give 5 × 1 × 1,500 = 7,500 characters), or raise the context window.
 
 A typical loop for chunking:
 

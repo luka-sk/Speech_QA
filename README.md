@@ -116,7 +116,7 @@ Strany: <recognised parties>                     (only when a filter was applied
 Období: <d. m. yyyy> – <d. m. yyyy>              (only when a filter was applied)
 Zdroje:
   [1] <speech id> – <speaker> (<party> | bez strany), <d. m. yyyy>
-      „<excerpt of the best matching passage, at most 300 characters>“
+      „<excerpt of the best matching chunk, at most 300 characters>“
   [2] …
 ```
 
@@ -147,16 +147,18 @@ rejected at startup with a message naming the key.
 | `[generation]` | `temperature` (0), `reasoning_effort` ("none"), `max_answer_tokens`, `context_window_tokens` |
 | `[index]` | `path` (.speech_qa/index), `collection` |
 | `[chunking]` | `target_chars` (1000), `max_chars` (1500), `overlap_sentences` (1) |
-| `[retrieval]` | `candidate_chunks` (50), `max_speeches` (8), `max_speeches_per_speaker` (2), `max_passages_per_speech` (2) |
+| `[retrieval]` | `candidate_chunks` (50), `max_speeches` (5), `max_speeches_per_speaker` (2), `max_chunks_per_speech` (1) |
 | `[query]` | `max_chars` (1000) |
 | `[logging]` | `level` |
 
 **Context window.** `generation.context_window_tokens` (4096 by default) must match the
 context length configured in Ollama, which cannot be set per request through the OpenAI
-API. The prompt is kept below it; if you need more sources per answer, raise the context
-length in Ollama (the context length setting of the Ollama app, or the
-`OLLAMA_CONTEXT_LENGTH` environment variable of `ollama serve`) and then this value.
-Larger contexts make answers slower.
+API. The prompt is kept below it: with 4096 tokens about 2,600 are left for the sources,
+which is why at most 5 speeches with one chunk each are passed by default. If you need more
+sources per answer, raise the context length in Ollama (the context length setting of the
+Ollama app, or the `OLLAMA_CONTEXT_LENGTH` environment variable of `ollama serve`), then this
+value and `retrieval.max_speeches` or `retrieval.max_chunks_per_speech`. Larger contexts make
+answers slower.
 
 Changing `chunking.*` or the embedding model requires `ingest --rebuild`; the other
 settings take effect immediately.
@@ -180,7 +182,7 @@ parties used by the query analyser.
 
 ```
 question ──► query analysis ──► embed the rest ──► search with filter ──► group by speech ──► prompt ──► gemma4 ──► citations ──► output
-             speakers, party,    of the question    (50 chunks)            best 8 speeches,   numbered               checked and
+             speakers, party,    of the question    (50 chunks)            best 5 speeches,   numbered               checked and
              years → filter                                                 max 2 per speaker  sources [n]            mapped to ids
 ```
 
@@ -188,8 +190,9 @@ question ──► query analysis ──► embed the rest ──► search with
    case ("Doležala", "s Doležalovou"), party codes and years ("v roce 2020", "od 2019 do 2021")
    become a filter. "Doležal" matches both Lukáš and Ondřej Doležal but never Doležalová.
 2. **Retrieval**: the rest of the question is embedded; the most similar chunks that satisfy
-   the filter are grouped by speech. Without a named speaker at most two speeches per speaker
-   are kept, so a broad question is answered from several people.
+   the filter are grouped by speech, and the best 5 speeches are passed on, each with its most
+   similar chunk. Without a named speaker at most two speeches per speaker are kept, so a broad
+   question is answered from several people.
 3. **Generation**: the sources are given to the model as `[1]`, `[2]`, … with speaker, party
    and date, escaped and marked as quotations. The rules ask for answers only from the sources,
    precise attribution, an explicit note when a name is ambiguous and an honest "no answer".
@@ -253,6 +256,7 @@ tests/              unit tests (fakes, in-memory Qdrant, simulated HTTP) and int
 | Name matching | without diacritics, only capitalised words | "Dolezal" is understood; common words ("svoboda", "král") never become filters | names typed in lower case are not recognised |
 | No fallback search | a filter without matches returns nothing | searching without the filter would attribute other people's words to the named speaker | the user may need to rephrase |
 | Diversity | at most 2 speeches per speaker unless a speaker is named | broad questions are answered from several people | a very active speaker may be under-represented |
+| Sources per answer | at most 5 speeches, each with its single most similar chunk | the sources fit into the default 4096-token context window (about 2,600 tokens are left for them); more speeches give a broad question more voices than more chunks of fewer speeches | the model sees one chunk of each speech, not the whole argument; more sources need a larger context window |
 | Source labels | the model sees `[1]`, `[2]`; ids are mapped back | real ids are long and models copy short numbers reliably | – |
 | Prompt safety | sources escaped and marked as quotations; the model is told to ignore instructions in them | speech texts are untrusted data | no defence is perfect against prompt injection |
 | Context budget | sources are added until an estimated budget (characters / 3) is used; a warning when the reported prompt size reaches 95 % of the window | depending on its version and settings, Ollama may silently cut prompts longer than its context length | fewer sources with a small context window |
@@ -290,24 +294,24 @@ python cli.py evaluate                          # report → reports/evaluation-
 
 **Retrieval** (k = 8 sources passed to the model)
 
-| Set | Hit@1 | Hit@5 | Recall@8 | MRR  | nDCG@8 | Speaker precision | Speaker recall |
-|---|------|------|---------|------|--------|-------------------|----------------|
-| manual | … | … | … | … | … | … | … |
-| synthetic | 80 % | 91 % | 92 % | 0.84 | 0.86 | 89 % | 100 % |
+| Set | Hit@1 | Hit@5 | Recall@5 | MRR  | nDCG@5 | Speaker precision | Speaker recall |
+|---|------|------|----------|------|--------|-------------------|----------------|
+| manual | … | … | …        | … | …      | … | … |
+| synthetic | 80 % | 91 % | 91 %     | 0.84 | 0.86   | 89 % | 100 % |
 
 **Answers**
 
 | Set | Valid citations | Citation precision | Correct "no answer" | False "no answer" | Faithfulness (1–5) | Relevance (1–5) |
 |---|-----------------|--------------------|---------------------|-------------------|--------------------|-----------------|
 | manual | …               | …                  | …                   | …                 | …                  | …               |
-| synthetic | 100 % | 65 % | - | 0 % | 4.8 | 5.0 |
+| synthetic | 100 % | 61 %               | - | 0 % | 5.0 | 5.0 |
 
 **Latency** (seconds)
 
 | Set | Total p50 | Total p95 | Retrieval p50 | Generation p50 |
 |---|-----------|-----------|---------------|----------------|
 | manual | …         | …         | …             | …              |
-| synthetic | 52.7 | 79.3 | 0.07 | 52.6 |
+| synthetic | 41.6 | 78.1 | 0.07 | 41.6 |
 
 ---
 
@@ -358,7 +362,7 @@ the evaluation tools and `check`. The suite runs on Python 3.12 and 3.13.
   mapped to people, the data contain no roles.
 * **Language model**: gemma4:12b occasionally makes Czech spelling mistakes and may
   misinterpret a passage; it does not always point out a wrong premise in the question.
-* **No relevance threshold**: up to 8 sources are always passed to the model, which decides
+* **No relevance threshold**: up to 5 sources are always passed to the model, which decides
   whether they answer the question.
 * **Local Qdrant**: one process at a time; a second command (e.g. two `answer` runs, or
   `answer` during `evaluate`) reports that the index is in use. qdrant-client in local mode
@@ -367,9 +371,11 @@ the evaluation tools and `check`. The suite runs on Python 3.12 and 3.13.
   takes a long time (see the evaluation guide).
 * **Synthetic evaluation questions** resemble the source text and have a single relevant
   speech each; the LLM judge is the model that writes the answers.
-* **Limited Number of Sources for Long Speeches**: The retrieval system selects 8 speeches. 
-  For long speeches, the content may not fit within the default context window, which has 
-  a limited token capacity. This can affect evaluation metrics (Recall@8, nDCG@8).
+* **Limited number of sources**: the model gets at most 5 speeches, each with its single most
+  relevant chunk, so that the sources fit into the default context window of 4096 tokens.
+  A chunk does not always contain the whole argument of a speech, and when the chunks are
+  close to their maximum length (1,500 characters) the fifth source may not fit and is left
+  out. More sources or more chunks per speech need a larger context window.
 
 ---
 
@@ -379,14 +385,15 @@ the evaluation tools and `check`. The suite runs on Python 3.12 and 3.13.
   unrecognised names or relative periods such as "loni"); a register of functions with
   periods ("ministr financí 2019–2021"); Czech lemmatisation.
 * **Retrieval**: hybrid search (BM25 + embeddings), a reranker, a relevance threshold
-  calibrated on the real data; tuning of chunking and limits on the real data.
+  calibrated on the real data; context expansion (the neighbouring chunks around the best
+  chunk of a speech) and more sources with a larger context window; tuning of chunking and
+  limits on the real data.
 * **Operations**: Qdrant server (with payload indexes) for parallel use; a REST API next to
   the CLI (the application layer is ready for it); Docker image; optional query logging with
   a log file and JSON logs; `--json` output for scripts.
 * **Evaluation**: a helper suggesting candidate speeches for manual labelling
   (`suggest` / `import-labels`); comparison with the previous run; ablations (chunk size,
   query analysis, diversity); a recommended configuration in the report; a report without
-  data for sharing (`--redact`); a judge independent of the answering model; a solution 
-  addressing context window token limitations when the 8 retrieved speeches are too long.
+  data for sharing (`--redact`); a judge independent of the answering model.
 * **Development**: pre-commit hooks and CI once the repository location is known; report
   the unclosed SQLite connection to qdrant-client.
